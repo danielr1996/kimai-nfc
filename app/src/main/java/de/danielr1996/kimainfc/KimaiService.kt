@@ -1,7 +1,9 @@
 package de.danielr1996.kimainfc
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -16,12 +18,13 @@ import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 
 class KimaiService : Service() {
-    lateinit var url: String;
-    lateinit var username: String;
-    lateinit var apipassword: String;
-    lateinit var project: Integer;
-    lateinit var activity: Integer;
-    lateinit var q: RequestQueue
+    private lateinit var url: String;
+    private lateinit var username: String;
+    private lateinit var apipassword: String;
+    private lateinit var project: String;
+    private lateinit var activity: String;
+    private lateinit var q: RequestQueue
+    private lateinit var preferences: SharedPreferences
 
     override fun onBind(intent: Intent): IBinder? {
         return null
@@ -29,12 +32,14 @@ class KimaiService : Service() {
 
     override fun onCreate() {
         super.onCreate()
+        preferences = getSharedPreferences(getString(R.string.sharedPrefKey), Context.MODE_PRIVATE)
         Log.i("kimai/KimaiService","onCreate")
-        url="https://your-kimai.instance"
-        username="user@example.com"
-        apipassword="password"
-        project = Integer(1)
-        activity = Integer(1)
+        url=preferences.getString("url","").toString()
+        username=preferences.getString("username","").toString()
+        apipassword=preferences.getString("password","").toString()
+        project = preferences.getString("project","").toString()
+        activity = preferences.getString("activity","").toString()
+        Log.i("kimai/",url+" "+username+" "+apipassword)
         val cache = DiskBasedCache(cacheDir, 1024*1024)
         val network = BasicNetwork(HurlStack())
         q = RequestQueue(cache,network).apply { start() }

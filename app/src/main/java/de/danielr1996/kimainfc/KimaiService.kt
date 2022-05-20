@@ -33,13 +33,11 @@ class KimaiService : Service() {
     override fun onCreate() {
         super.onCreate()
         preferences = getSharedPreferences(getString(R.string.sharedPrefKey), Context.MODE_PRIVATE)
-        Log.i("kimai/KimaiService","onCreate")
         url=preferences.getString("url","").toString()
         username=preferences.getString("username","").toString()
         apipassword=preferences.getString("password","").toString()
         project = preferences.getString("project","").toString()
         activity = preferences.getString("activity","").toString()
-        Log.i("kimai/",url+" "+username+" "+apipassword)
         val cache = DiskBasedCache(cacheDir, 1024*1024)
         val network = BasicNetwork(HurlStack())
         q = RequestQueue(cache,network).apply { start() }
@@ -48,12 +46,10 @@ class KimaiService : Service() {
     fun clockin(): Request<JSONObject> {
         val now = getNow()
         val payload = JSONObject()
-        payload.put("begin", now)
         payload.put("project", project.toInt())
         payload.put("activity", activity.toInt())
         return object : JsonObjectRequest(Method.POST, "$url/api/timesheets", payload,
             {
-                Log.i("kimai/KimaiService", "clocked in at $now")
                 Toast.makeText(applicationContext, "Eingestempelt um $now", Toast.LENGTH_SHORT).show();
             },
             { error->error(error)}) {
@@ -64,10 +60,8 @@ class KimaiService : Service() {
     fun clockout(id: Int): Request<JSONObject> {
         val now = getNow()
         val payload = JSONObject()
-        payload.put("end",now)
-        return object: JsonObjectRequest(Method.PATCH, "$url/api/timesheets/$id", payload,
+        return object: JsonObjectRequest(Method.PATCH, "$url/api/timesheets/$id/stop", payload,
             {
-                Log.i("kimai/KimaiService", "clocked out at $now")
                 Toast.makeText(applicationContext, "Ausgestempelt um $now", Toast.LENGTH_SHORT).show();
             } ,
             {error->error(error)}){
@@ -76,7 +70,6 @@ class KimaiService : Service() {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        Log.i("kimai/KimaiService","onStartCommand")
         val activeTimeSheetRequest = object: JsonArrayRequest(
             Method.GET, "$url/api/timesheets/active", null,
             {activeTimeSheets ->
@@ -96,13 +89,12 @@ class KimaiService : Service() {
     }
 
     override fun onDestroy() {
-        Log.i("kimai/KimaiService","onDestroy")
         super.onDestroy()
     }
 
     fun getNow(): String {
         val date = LocalDateTime.now();
-        val formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss")
+        val formatter = DateTimeFormatter.ofPattern("HH : mm")
         return formatter.format(date);
     }
 
@@ -114,7 +106,5 @@ class KimaiService : Service() {
     }
 
     fun error(error: VolleyError){
-        Log.i("kimai/KimaiService",error.networkResponse.statusCode.toString())
-        Log.i("kimai/KimaiService",String(error.networkResponse.data))
     }
 }
